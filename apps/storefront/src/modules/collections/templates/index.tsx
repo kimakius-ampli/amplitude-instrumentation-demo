@@ -43,6 +43,11 @@ export default function CollectionTemplate({
             collectionId={collection.id}
             countryCode={countryCode}
             optionValueIds={optionValueIds}
+            list={{
+              list_type: "collection",
+              list_id: collection.id,
+              list_name: collection.title,
+            }}
           />
         </Suspense>
       </div>

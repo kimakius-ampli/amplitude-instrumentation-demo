@@ -1,4 +1,5 @@
 "use client"
+import { track } from "@lib/analytics"
 import { setAddresses } from "@lib/data/cart"
 import useToggleState from "@lib/hooks/use-toggle-state"
 import compareAddresses from "@lib/util/compare-addresses"
@@ -8,7 +9,7 @@ import Divider from "@modules/common/components/divider"
 import { Heading, Text } from "@modules/common/components/ui"
 import Spinner from "@modules/common/icons/spinner"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { useActionState } from "react"
+import { useActionState, useEffect, useRef } from "react"
 import BillingAddress from "../billing_address"
 import ErrorMessage from "../error-message"
 import ShippingAddress from "../shipping-address"
@@ -38,6 +39,22 @@ const Addresses = ({
   }
 
   const [message, formAction] = useActionState(setAddresses, null)
+
+  // setAddresses only redirects to the delivery step on success, so the
+  // address -> delivery transition marks this step as completed.
+  const step = searchParams.get("step")
+  const previousStep = useRef(step)
+
+  useEffect(() => {
+    if (previousStep.current === "address" && step === "delivery") {
+      track("Checkout Step Completed", {
+        checkout_step: "address",
+        cart_id: cart?.id,
+        shipping_country_code: cart?.shipping_address?.country_code,
+      })
+    }
+    previousStep.current = step
+  }, [step, cart?.id, cart?.shipping_address?.country_code])
 
   return (
     <div className="bg-white">

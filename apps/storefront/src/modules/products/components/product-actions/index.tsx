@@ -1,6 +1,8 @@
 "use client"
 
+import { track } from "@lib/analytics"
 import { addToCart } from "@lib/data/cart"
+import { getProductPrice } from "@lib/util/get-product-price"
 import { useIntersection } from "@lib/hooks/use-in-view"
 import { HttpTypes } from "@medusajs/types"
 import { Button } from "@modules/common/components/ui"
@@ -121,7 +123,9 @@ export default function ProductActions({
   const inView = useIntersection(actionsRef, "0px")
 
   // add the selected variant to the cart
-  const handleAddToCart = async () => {
+  const handleAddToCart = async (
+    addSource: "pdp" | "pdp_mobile_bar" = "pdp"
+  ) => {
     if (!selectedVariant?.id) return null
 
     setIsAdding(true)
@@ -130,6 +134,24 @@ export default function ProductActions({
       variantId: selectedVariant.id,
       quantity: 1,
       countryCode,
+    })
+
+    const { variantPrice: price } = getProductPrice({
+      product,
+      variantId: selectedVariant.id,
+    })
+
+    track("Product Added", {
+      product_id: product.id,
+      product_name: product.title,
+      variant_id: selectedVariant.id,
+      sku: selectedVariant.sku ?? null,
+      variant_title: selectedVariant.title,
+      price: price?.calculated_price_number,
+      currency_code: price?.currency_code,
+      is_on_sale: price?.price_type === "sale",
+      quantity: 1,
+      add_source: addSource,
     })
 
     setIsAdding(false)
@@ -163,7 +185,7 @@ export default function ProductActions({
         <ProductPrice product={product} variant={selectedVariant} />
 
         <Button
-          onClick={handleAddToCart}
+          onClick={() => handleAddToCart("pdp")}
           disabled={
             !inStock ||
             !selectedVariant ||
@@ -188,7 +210,7 @@ export default function ProductActions({
           options={options}
           updateOptions={setOptionValue}
           inStock={inStock}
-          handleAddToCart={handleAddToCart}
+          handleAddToCart={() => handleAddToCart("pdp_mobile_bar")}
           isAdding={isAdding}
           show={!inView}
           optionsDisabled={!!disabled || isAdding}

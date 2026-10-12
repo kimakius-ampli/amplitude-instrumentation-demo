@@ -1,5 +1,6 @@
 "use client"
 import { RadioGroup } from "@headlessui/react"
+import { track } from "@lib/analytics"
 import { isStripeLike, paymentInfoMap } from "@lib/constants"
 import { initiatePaymentSession } from "@lib/data/cart"
 import { CheckCircleSolid, CreditCard } from "@medusajs/icons"
@@ -92,6 +93,12 @@ const Payment = ({
       }
 
       if (!shouldInputPaymentDetails) {
+        track("Checkout Step Completed", {
+          checkout_step: "payment",
+          cart_id: cart.id,
+          payment_provider: selectedPaymentMethod,
+        })
+
         return router.push(
           pathname + "?" + createQueryString("step", "review"),
           {

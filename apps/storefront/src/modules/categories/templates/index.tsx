@@ -97,6 +97,11 @@ export default function CategoryTemplate({
             categoryId={category.id}
             countryCode={countryCode}
             optionValueIds={optionValueIds}
+            list={{
+              list_type: "category",
+              list_id: category.id,
+              list_name: category.name,
+            }}
           />
         </Suspense>
       </div>

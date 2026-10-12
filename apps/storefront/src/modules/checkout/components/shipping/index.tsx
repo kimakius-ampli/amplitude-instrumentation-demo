@@ -1,5 +1,6 @@
 "use client"
 import { Radio, RadioGroup } from "@headlessui/react"
+import { track } from "@lib/analytics"
 import { setShippingMethod } from "@lib/data/cart"
 import { calculatePriceForShippingOption } from "@lib/data/fulfillment"
 import { convertToLocale } from "@lib/util/money"
@@ -114,6 +115,18 @@ const Shipping: React.FC<ShippingProps> = ({
   }
 
   const handleSubmit = () => {
+    const selectedOption = availableShippingMethods?.find(
+      (sm) => sm.id === shippingMethodId
+    )
+
+    track("Checkout Step Completed", {
+      checkout_step: "delivery",
+      cart_id: cart.id,
+      shipping_option_name: selectedOption?.name,
+      fulfillment_type:
+        showPickupOptions === PICKUP_OPTION_ON ? "pickup" : "shipping",
+    })
+
     router.push(pathname + "?step=payment", { scroll: false })
   }
 

@@ -1,3 +1,4 @@
+import { TrackEvent } from "@lib/analytics/components"
 import { listProductsWithSort } from "@lib/data/products"
 import { getRegion } from "@lib/data/regions"
 import { OptionValueIds } from "@lib/util/product-option-filters"
@@ -23,7 +24,9 @@ export default async function PaginatedProducts({
   productsIds,
   countryCode,
   optionValueIds,
+  list,
 }: {
+  list?: { list_type: "category" | "collection"; list_id: string; list_name: string }
   sortBy?: SortOptions
   page: number
   collectionId?: string
@@ -72,6 +75,18 @@ export default async function PaginatedProducts({
 
   return (
     <>
+      {list && (
+        <TrackEvent
+          key={`${list.list_id}-${page}-${sortBy ?? ""}`}
+          event="Product List Viewed"
+          properties={{
+            ...list,
+            result_count: count,
+            page_number: page,
+            sort_by: sortBy,
+          }}
+        />
+      )}
       <ul
         className="grid grid-cols-2 w-full small:grid-cols-3 medium:grid-cols-4 gap-x-6 gap-y-8"
         data-testid="products-list"

@@ -1,7 +1,9 @@
 import { Metadata } from "next"
 
+import { AnalyticsProvider } from "@lib/analytics/components"
 import { listCartOptions, retrieveCart } from "@lib/data/cart"
 import { retrieveCustomer } from "@lib/data/customer"
+import { getLocale } from "@lib/data/locale-actions"
 import { getBaseURL } from "@lib/util/env"
 import { StoreCartShippingOption } from "@medusajs/types"
 import CartMismatchBanner from "@modules/layout/components/cart-mismatch-banner"
@@ -16,6 +18,7 @@ export const metadata: Metadata = {
 export default async function PageLayout(props: { children: React.ReactNode }) {
   const customer = await retrieveCustomer()
   const cart = await retrieveCart()
+  const locale = await getLocale()
   let shippingOptions: StoreCartShippingOption[] = []
 
   if (cart) {
@@ -26,6 +29,11 @@ export default async function PageLayout(props: { children: React.ReactNode }) {
 
   return (
     <>
+      <AnalyticsProvider
+        customerId={customer?.id}
+        currencyCode={cart?.currency_code}
+        locale={locale}
+      />
       <Nav />
       {customer && cart && (
         <CartMismatchBanner customer={customer} cart={cart} />

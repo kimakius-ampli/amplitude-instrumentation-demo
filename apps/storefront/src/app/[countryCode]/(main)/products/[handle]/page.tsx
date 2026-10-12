@@ -1,7 +1,9 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
+import { TrackEvent } from "@lib/analytics/components"
 import { listProducts } from "@lib/data/products"
 import { getRegion } from "@lib/data/regions"
+import { getProductPrice } from "@lib/util/get-product-price"
 import ProductTemplate from "@modules/products/templates"
 import { HttpTypes } from "@medusajs/types"
 
@@ -77,13 +79,31 @@ export default async function ProductPage(props: Props) {
   }
 
   const images = getImagesForVariant(pricedProduct, selectedVariantId)
+  const { cheapestPrice } = getProductPrice({ product: pricedProduct })
 
   return (
-    <ProductTemplate
-      product={pricedProduct}
-      region={region}
-      countryCode={params.countryCode}
-      images={images ?? []}
-    />
+    <>
+      <TrackEvent
+        key={pricedProduct.id}
+        event="Product Viewed"
+        properties={{
+          product_id: pricedProduct.id,
+          product_name: pricedProduct.title,
+          product_handle: pricedProduct.handle,
+          collection_name: pricedProduct.collection?.title,
+          product_type: pricedProduct.type?.value,
+          price: cheapestPrice?.calculated_price_number,
+          currency_code: cheapestPrice?.currency_code,
+          is_on_sale: cheapestPrice?.price_type === "sale",
+          variant_count: pricedProduct.variants?.length ?? 0,
+        }}
+      />
+      <ProductTemplate
+        product={pricedProduct}
+        region={region}
+        countryCode={params.countryCode}
+        images={images ?? []}
+      />
+    </>
   )
 }

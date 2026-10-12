@@ -4,6 +4,7 @@ import type { Hit } from "instantsearch.js"
 import { useEffect, useRef } from "react"
 import { useHits, useInstantSearch } from "react-instantsearch"
 
+import { track } from "@lib/analytics"
 import useSearchSettled from "@lib/hooks/use-search-settled"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { Text } from "@modules/common/components/ui"
@@ -26,7 +27,7 @@ type StoreHitsProps = {
 }
 
 const StoreHits = ({ hitsPerPage, currencyCode }: StoreHitsProps) => {
-  const { items } = useHits<ProductHit>()
+  const { items, results } = useHits<ProductHit>()
   const { status, error, indexUiState } = useInstantSearch()
   const { isSearching, hasNoResultsYet } = useSearchSettled()
 
@@ -41,6 +42,30 @@ const StoreHits = ({ hitsPerPage, currencyCode }: StoreHitsProps) => {
       settled.current = { page: currentPage, refinementKey }
     }
   }, [isSearching, currentPage, refinementKey])
+
+  // One view per page of results. Filter, sort and search changes are left to
+  // their own events so typing in the search box doesn't flood this one.
+  const trackedPage = useRef<number | null>(null)
+
+  useEffect(() => {
+    if (isSearching || hasNoResultsYet || status === "error") {
+      return
+    }
+
+    if (trackedPage.current === currentPage) {
+      return
+    }
+
+    trackedPage.current = currentPage
+    track("Product List Viewed", {
+      list_type: "store",
+      list_id: "store",
+      list_name: "All products",
+      result_count: results?.nbHits ?? items.length,
+      page_number: currentPage,
+      sort_by: indexUiState.sortBy,
+    })
+  }, [isSearching, hasNoResultsYet, status, currentPage, results, items, indexUiState.sortBy])
 
   const isPagingOnly =
     refinementKey === settled.current.refinementKey &&
